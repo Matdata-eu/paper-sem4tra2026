@@ -3,6 +3,8 @@ name: Build PDF
 on:
   push:
   pull_request:
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -20,3 +22,13 @@ jobs:
         with:
           name: paper-pdf
           path: output/paper.pdf
+
+      - name: Prepare release asset
+        if: github.event_name == 'release'
+        run: cp output/paper.pdf output/Sem4tra2026-Norway.pdf
+
+      - name: Upload PDF to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: output/Sem4tra2026-Norway.pdf
