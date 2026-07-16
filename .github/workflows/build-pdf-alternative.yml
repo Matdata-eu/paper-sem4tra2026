@@ -1,0 +1,32 @@
+name: Build PDF
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: cristiangreco/pdflatex
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build PDF
+        shell: sh
+        run: |
+          set -e
+          cd source
+          TEXINPUTS=.:../dependencies//: BIBINPUTS=. pdflatex -interaction=nonstopmode -halt-on-error -output-directory=../output paper.tex
+          cd ../output
+          BIBINPUTS=../source bibtex paper
+          cd ../source
+          TEXINPUTS=.:../dependencies//: BIBINPUTS=. pdflatex -interaction=nonstopmode -halt-on-error -output-directory=../output paper.tex
+          TEXINPUTS=.:../dependencies//: BIBINPUTS=. pdflatex -interaction=nonstopmode -halt-on-error -output-directory=../output paper.tex
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-pdf
+          path: output/paper.pdf

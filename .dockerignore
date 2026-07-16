@@ -1,0 +1,17 @@
+output/
+.git/
+.github/
+.vscode/
+**/*.aux
+**/*.bbl
+**/*.blg
+**/*.log
+**/*.out
+**/*.toc
+**/*.fls
+**/*.fdb_latexmk
+**/*.synctex.gz
+**/*.run.xml
+**/*.pdf
+Thumbs.db
+.DS_Store

@@ -1,0 +1,22 @@
+# Initial documents for local reference only
+/input/*
+
+# Generated LaTeX build output
+/output/*
+
+# Generated from local builds if output directory is bypassed
+/source/*.aux
+/source/*.bbl
+/source/*.blg
+/source/*.log
+/source/*.out
+/source/*.toc
+/source/*.fls
+/source/*.fdb_latexmk
+/source/*.synctex.gz
+/source/*.run.xml
+/source/*.pdf
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
