@@ -443,11 +443,11 @@ rather than a reliable measure to compute with.
 %% =====================================================================
 
 We now describe how the graph is built. To keep the focus on the semantic
-lessons, we deliberately omit the operational plumbing (orchestration,
-scheduling, clustering) and present a simplified view. The pipeline is mature
-and runs in production: it currently produces roughly 13 million triples
-across seventeen ontologies, covering more than five thousand kilometres of
-track~\cite{dim}.
+lessons, we present a simplified view here and defer the operational plumbing
+(orchestration, scheduling, clustering) and performance figures to
+Section~\ref{sec:implementation}. The pipeline is mature and runs in production:
+it currently produces roughly 13 million triples across seventeen ontologies,
+covering more than five thousand kilometres of track~\cite{dim}.
 
 \subsection{The Vision Versus the Reality}
 
@@ -946,6 +946,90 @@ predicates bound to variables -- effectively path-finding through the graph. We
 ultimately had to decompose them into fifteen sequential queries to make them
 tractable, an outcome that again reflects the absence of first-class topology
 support.
+
+%% =====================================================================
+\section{Technical Implementation and Performance}
+\label{sec:implementation}
+%% =====================================================================
+
+The pipeline of Section~\ref{sec:pipeline} deliberately hid the operational
+plumbing. We make it concrete here and report execution times, since
+reproducibility and performance are legitimate concerns for a production
+knowledge graph and were raised in review.
+
+\subsection{Deployment}
+
+The pipeline runs on a managed Kubernetes cluster (Azure Kubernetes Service) as
+part of the DIM platform~\cite{dim}. Orchestration is provided by Apache
+Airflow~3.2, deployed as the usual set of components -- API server, scheduler,
+DAG processor, triggerer and a Celery worker -- backed by a PostgreSQL metadata
+database and a Redis (Valkey) broker, with all pipeline state held on a shared
+Azure Files volume mounted into every pod. The actual data processing runs in a
+single Celery worker pod, which is by far the largest workload: it is
+provisioned with 1--4 vCPU and 28--32~GiB of memory. The worker image bundles
+the full toolchain -- a Java~21 runtime, Apache Jena~5.6 (TDB2 and
+Fuseki)~\cite{jena}, SPARQL Anything~\cite{sparqlanything}, SpatiaLite for the
+spatial pre-processing~\cite{spatialite}, and both SHACL engines, TopBraid
+SHACL~\cite{topbraidshacl} and maplib~\cite{maplib}. SPARQL Anything is run with
+a 16~GB Java heap; splitting and post-processing over the full graph are the main
+drivers of the worker's large memory envelope.
+
+\subsection{Orchestration and Reliability}
+
+The pipeline is decomposed into a sequence of Airflow DAGs -- source ingestion,
+SPARQL Anything mapping, post-processing, splitting, railML generation and RINF
+generation -- chained through Airflow's data-aware scheduling: each stage
+declares the dataset it produces, and the next stage is triggered automatically
+when that dataset is updated. All post-processing runs against a \emph{staging}
+TDB2 dataset that is only hot-swapped behind the stable Fuseki endpoint once the
+stage has completed successfully (Section~\ref{sec:pipeline}). Individual tasks
+are configured to retry up to three times with exponential backoff, so that
+transient failures -- dominated by Azure Files I/O latency and occasional memory
+pressure during the splitting stage -- are absorbed automatically, and the
+hot-swap guarantees that consumers never observe a partially processed graph even
+when a stage fails and is re-run.
+
+\subsection{Execution Times}
+
+Table~\ref{tab:benchmark} reports the per-stage wall-clock time on the hardware
+above, for the full production dataset (roughly 13 million triples, more than
+five thousand kilometres of track). Two observations stand out. First, the
+\emph{splitting} stage (1~h~30) and \emph{post-processing} (45~min) dominate the
+end-to-end run; both are pure SPARQL over the whole graph in Fuseki, and the
+former is precisely the fifteen sequential topology-traversal queries whose cost
+we attribute to the absence of first-class topology support
+(Section~\ref{sec:geosparql}). Second, the choice of SHACL engine for the RINF
+export matters by an order of magnitude: the same rule set that maplib executes
+in about 10~minutes takes TopBraid SHACL roughly 2~hours, which quantifies the
+qualitative claim of Section~\ref{sec:discussion}. Excluding the slower TopBraid
+alternative, an end-to-end run completes in under three hours.
+
+\begin{table}[t]
+  \centering
+  \caption{Per-stage wall-clock execution time of the production pipeline
+    (Figure~\ref{fig:pipeline}), measured on a single Celery worker pod (1--4
+    vCPU, 28--32~GiB) on AKS. The two RINF rows are \emph{alternative} engines
+    for the same step, not additive.}
+  \label{tab:benchmark}
+  \small
+  \begin{tabularx}{\columnwidth}{@{}Xr@{}}
+    \toprule
+    \textbf{Pipeline stage} & \textbf{Time} \\
+    \midrule
+    Source ingestion (SpatiaLite SQL, CSV export)\textsuperscript{a} & 3.5\,min \\
+    SPARQL Anything mapping ($\sim$50 CONSTRUCT) & 10\,min \\
+    Post-processing ($\sim$50 SPARQL UPDATE, Fuseki) & 45\,min \\
+    Splitting (15 sequential SPARQL queries) & 1\,h\,30 \\
+    railML generation (split subnetworks) & 15\,min \\
+    RINF generation -- maplib SHACL & 10\,min \\
+    RINF generation -- TopBraid SHACL & 2\,h \\
+    \bottomrule
+  \end{tabularx}
+
+  \smallskip
+  {\footnotesize \textsuperscript{a}Assumes a warmed-up OpenTNF input whose
+    SpatiaLite spatial views are already precomputed.\par}
+\end{table}
 
 %% =====================================================================
 \section{Discussion}
