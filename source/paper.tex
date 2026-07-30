@@ -14,6 +14,7 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{xurl}
@@ -54,6 +55,25 @@
   flow/.style  = {-{Stealth[length=2mm]}, thick},
   dflow/.style = {-{Stealth[length=2mm]}, thick, dashed},
 }
+
+%%
+%% Harvey-ball style rating symbols used in the ontology comparison matrix
+%% (Table~\ref{tab:ontology-comparison}). #1 is the number of filled quarters
+%% (0--4), drawn clockwise from the top.
+%%
+\newcommand{\ratedisc}[1]{%
+  \tikz[baseline=-0.55ex]{%
+    \ifnum#1>0
+      \fill (0,0) -- (90:0.62ex)
+        arc[start angle=90, end angle=\the\numexpr90-90*#1\relax,
+            radius=0.62ex] -- cycle;%
+    \fi
+    \draw (0,0) circle (0.62ex);}}
+\newcommand{\ratefull}{\ratedisc{4}}
+\newcommand{\ratehigh}{\ratedisc{3}}
+\newcommand{\ratehalf}{\ratedisc{2}}
+\newcommand{\ratelow}{\ratedisc{1}}
+\newcommand{\ratenone}{\ratedisc{0}}
 
 \begin{document}
 
@@ -452,6 +472,92 @@ gives us confidence in the modelling. By contrast, the ERA
 ontology~\cite{eraontology}, while mandated for regulatory publication, does not
 yet have a comparable track record of proven use cases; we therefore treat it as
 an export target (Section~\ref{sec:rinf}) rather than as our internal backbone.
+
+It is worth being precise about \emph{what} is being compared. The railway
+standards of Section~\ref{sec:topology} fall into two families. RTM~\cite{rtm},
+RSM~\cite{rsm} and OpenTNF~\cite{opentnf} are essentially \emph{topology,
+positioning and entity-defining} schemas: they establish how the network graph
+and locations along it are described, but they deliberately say little about the
+assets themselves. railML~3.x~\cite{railml} and the ERA
+ontology~\cite{eraontology}, by contrast, are \emph{asset-describing} models that
+build on such a topological foundation to catalogue the physical and functional
+infrastructure. A meaningful requirements comparison therefore only makes sense
+\emph{within} a family; pitting an asset ontology against a pure topology format
+such as RTM would not be fair. For that reason we restrict the comparison in
+Table~\ref{tab:ontology-comparison} to the two asset-describing models that are
+genuine candidates for our backbone: railML~3.x and the ERA ontology.
+
+The single respect in which ERA is clearly ahead is that it is a \emph{native}
+ontology with first-class RINF compatibility: it is expressed in OWL/RDF and is
+the regulatory target for European infrastructure reporting, whereas railML is
+primarily an XML exchange format whose ontology is a more recent, still-maturing
+derivative and whose data must be \emph{mapped} to satisfy RINF
+(Section~\ref{sec:rinf}). Both models are open and community-governed, although
+railML carries some licensing restrictions on its schema. On virtually every
+other axis, however, railML is currently the more complete choice for an internal
+backbone. It is a widely used exchange format with proven industrial adoption and
+a detailed asset catalogue, and it supports a number of capabilities that the ERA
+ontology does not yet express at all -- among them:
+
+\begin{itemize}
+  \item railML distinguishes over- and undercrossings, where ERA offers only
+        generic bridges and tunnels;
+  \item railML supports network levels, element aggregation and the description
+        of multiple coexisting networks;
+  \item railML can convert between topological (intrinsic), linear (kilometric --
+        across several linear positioning systems) and geographic coordinates,
+        which ERA cannot;
+  \item railML describes left/right and through/diverging branches at a switch,
+        absent in ERA;
+  \item railML models signaling panels (speed indicators, pantograph and
+        traction controls, and so on) that have no ERA counterpart;
+  \item railML treats overhead contact line, etcs areas, speed sections, gradients 
+        and curves as first-class positioned entities, whereas ERA links them to a track;
+  \item railML covers interlocking (routes, locks, signal aspects, work zones),
+        schematic visualisations and timetabling (itineraries, trains,
+        connections, rosterings) -- none of which the ERA ontology currently
+        addresses.
+\end{itemize}
+
+None of this is a criticism of the ERA ontology's trajectory. It is a young,
+regulatory-driven model, and we have every confidence that it will evolve to
+overcome these limitations; the authors indeed intend to contribute, in their own
+capacity, to that evolution. For the specific role of an \emph{internal backbone}
+that must already express the full richness of the infrastructure today, however,
+railML remains the pragmatic choice, and we treat the ERA ontology as an export
+target (Section~\ref{sec:rinf}).
+
+\begin{table*}[t]
+  \centering
+  \caption{Requirements matrix comparing the two asset-describing candidate
+    ontologies for the internal backbone. See the note below for the rating
+    scale.}
+  \label{tab:ontology-comparison}
+  \begin{tabularx}{\textwidth}{@{}Xcc@{}}
+    \toprule
+    \textbf{Requirement} & \textbf{railML~3.x} & \textbf{ERA ontology} \\
+    \midrule
+    Native ontology              & \ratenone & \ratefull \\
+    Open and community-governed  & \ratehigh & \ratefull \\
+    RINF compatibility           & \ratehalf & \ratefull \\
+    Widely used exchange format  & \ratefull & \ratehalf \\
+    Proven industrial adoption   & \ratefull & \ratehalf \\
+    Detailed railway asset catalog & \ratehigh & \ratelow \\
+    Topology management          & \ratelow  & \ratenone \\
+    Schematic track plan         & \ratehigh & \ratelow \\
+    Network statement            & \ratehigh & \ratehalf \\
+    Route time calculation       & \ratehigh & \ratenone \\
+    Timetable management         & \ratehigh & \ratenone \\
+    ETCS data exchange           & \ratehigh & \ratenone \\
+    \bottomrule
+  \end{tabularx}
+
+  \smallskip
+  {\footnotesize Rating scale (Harvey balls, more filled is stronger):
+    \ratefull~full / native support, \ratehigh~good support,
+    \ratehalf~emerging or partial support, \ratelow~limited support,
+    \ratenone~none or not (yet) available.\par}
+\end{table*}
 
 For the many generic, non-railway-specific aspects we reuse established W3C and
 community ontologies rather than reinventing them: OWL-Time for temporal
