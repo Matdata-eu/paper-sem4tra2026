@@ -42,7 +42,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build slides
-        run: pnpm exec slidev build --base "/${{ github.event.repository.name }}/" --out dist
+        run: pnpm exec slidev build --out dist
 
       - name: Disable Jekyll
         run: touch dist/.nojekyll
