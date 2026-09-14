@@ -1,6 +1,8 @@
 ---
 theme: seriph
 title: Building the Norwegian Railway Knowledge Graph
+base: /
+routerMode: hash
 info: |
   ## Building and Publishing a Railway Infrastructure Knowledge Graph
   Lessons Learned from SPARQL Anything, GeoSPARQL, SHACL and RINF Publication.
