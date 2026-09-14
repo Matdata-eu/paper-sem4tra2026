@@ -953,6 +953,21 @@ Sem4Tra 2026 · Ghent
 mathias@matdata.eu · matdata.eu · dim.apps.banenor.no
 </div>
 
+<div class="mt-6 flex justify-center gap-8">
+  <div class="text-center">
+    <a href="https://github.com/Matdata-eu/paper-sem4tra2026" target="_blank" rel="noopener noreferrer">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fgithub.com%2FMatdata-eu%2Fpaper-sem4tra2026" alt="QR code for the paper GitHub repository" style="width: 8rem; height: 8rem; border-radius: 0.5rem; background: white; padding: 0.4rem;" />
+    </a>
+    <div class="mt-2 text-xs opacity-80">GitHub repo</div>
+  </div>
+  <div class="text-center">
+    <a href="https://dim.apps.banenor.no/" target="_blank" rel="noopener noreferrer">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fdim.apps.banenor.no%2F" alt="QR code for the DIM web portal" style="width: 8rem; height: 8rem; border-radius: 0.5rem; background: white; padding: 0.4rem;" />
+    </a>
+    <div class="mt-2 text-xs opacity-80">DIM portal</div>
+  </div>
+</div>
+
 <div class="mt-6 text-lg">Questions?</div>
 
 <!--
